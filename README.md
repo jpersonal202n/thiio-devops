@@ -1,66 +1,109 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Proyecto con Docker y Pruebas Automatizadas
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Este documento detalla el proceso de configuración de un entorno de desarrollo con Docker, la implementación de un CRUD de usuarios utilizando Laravel, y la configuración de pruebas automatizadas con PHPUnit.
 
-## About Laravel
+## Índice
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+1. [Introducción](#introducción)
+2. [Configuración del Entorno con Docker](#configuración-del-entorno-con-docker)
+    - [Servicios Utilizados](#servicios-utilizados)
+    - [Archivo docker-compose.yml](#archivo-docker-composeyml)
+3. [Inicialización del Proyecto](#inicialización-del-proyecto)
+    - [Configuraciones de Laravel](#configuraciones-de-laravel)
+    - [Comandos Docker](#comandos-docker)
+4. [Pruebas Automatizadas](#pruebas-automatizadas)
+5. [Conclusiones](#conclusiones)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Introducción
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Este documento explica cómo se configuró un entorno de desarrollo con Docker, se implementó un CRUD de usuarios y se realizaron pruebas automatizadas para asegurar que todo funcione correctamente.
 
-## Learning Laravel
+## Configuración del Entorno con Docker
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Servicios Utilizados
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Se usaron estos servicios para el proyecto:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **Nginx**: Servidor web y proxy inverso.
+- **MySQL**: Base de datos relacional.
+- **PHP**: Entorno de ejecución para el framework Laravel.
+- **HTTPD**: Servicio HTTP adicional.
 
-## Laravel Sponsors
+### Archivo docker-compose.yml
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Se utilizó el archivo `docker-compose.yml` para definir y gestionar los servicios Docker. Aquí está el contenido del archivo:
 
-### Premium Partners
+```yaml
+version: '3.8'
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+services:
+  th_laravel:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: th_laravel_latest
+    container_name: th_laravel
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    environment:
+      - PHP_OPCACHE_VALIDATE_TIMESTAMPS=0
+    restart: unless-stopped
+    privileged: true
+    tty: true
+    networks:
+      - th_network
 
-## Contributing
+  th_nginx_proxy:
+    image: nginx:stable-alpine
+    container_name: th_nginx_latest
+    restart: unless-stopped
+    tty: true
+    depends_on:
+      - th_laravel
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - th_network
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+  th_db:
+    image: mysql:8.0.21
+    container_name: th_mysql_latest
+    restart: always
+    tty: true
+    environment:
+      MYSQL_DATABASE: thiio
+      MYSQL_ROOT_PASSWORD: secret
+    ports:
+      - "33061:3306"
+    volumes:
+      - dbdata:/var/lib/mysql:delegated
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --sort_buffer_size=1073741824
+      - --max_connections=1000
+    networks:
+      - th_network
 
-## Code of Conduct
+  th_random_http_service:
+    image: httpd:latest
+    container_name: th_random_http_service
+    restart: unless-stopped
+    tty: true
+    depends_on:
+      - th_laravel
+    ports:
+      - "8080:80"
+    networks:
+      - th_network
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+volumes:
+  dbdata:
+    driver: local
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+networks:
+  th_network:
+    driver: bridge
