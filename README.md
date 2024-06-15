@@ -8,6 +8,7 @@ Este documento proporciona los pasos necesarios para configurar e inicializar un
 2. [Configuración Inicial](#configuración-inicial)
 3. [Comandos Docker](#comandos-docker)
 6. [Pruebas Automatizadas](#pruebas-automatizadas)
+7. [Documentación Postman](https://documenter.getpostman.com/view/34988986/2sA3XPEP5D#497bd096-9105-40bf-ba45-e37f65cafd42)
 
 ## Requisitos Previos
 
