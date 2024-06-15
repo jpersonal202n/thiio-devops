@@ -14,7 +14,6 @@ use App\Http\Controllers\Api\V1\AuthController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
-
 Route::group(['prefix' => 'v1'],function() {
     Route::post('auth',[AuthController::class,'auth'])->name('auth');
 });
