@@ -37,7 +37,7 @@ Asegúrate de tener instalados los siguientes programas en tu sistema:
    ```bash
    docker-compose up --build
 
-2. **Para ingresar al contendor de th_laravel añade el siguiente comand (opcional):**
+2. **Para ingresar al contendor de th_laravel añade el siguiente comando:**
    ```bash
    docker exec -it th_laravel bash 
 
