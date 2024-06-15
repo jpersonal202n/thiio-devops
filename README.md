@@ -41,6 +41,10 @@ Asegúrate de tener instalados los siguientes programas en tu sistema:
    ```bash
    docker exec -it th_laravel bash 
 
+3. **Ejecute los siguientes comandos:**
+   ```bash
+   php artisan passport:install --force
+
 ## Pruebas automatizadas
 
 1. **Ingresa al contenedor de th_laravel:**
