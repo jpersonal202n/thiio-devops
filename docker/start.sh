@@ -5,6 +5,16 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+[ ! -d "/var/www/vendor" ] &&  composer install
+
+echo -e "${YELLOW}Añadiendo permisos a carpetas importantes de laravel${NC}"
+chown -R $USER:www-data storage
+chown -R $USER:www-data bootstrap/cache
+chmod -R 775 storage
+chmod -R 775 bootstrap/cache
+
+php artisan config:clear
+
 echo -e "${YELLOW}Esperando a que la base de datos esté disponible...${NC}"
 RETRIES=5
 until nc -z th_db 3306; do
@@ -27,7 +37,7 @@ else
     echo -e "${RED}Error al ejecutar migraciones.${NC}"
     exit 1
   fi
-
+  
   echo -e "${YELLOW}Ejecutando seeders...${NC}"
   if php artisan db:seed --force; then
     echo -e "${GREEN}Seeders ejecutados exitosamente.${NC}"
